@@ -83,16 +83,8 @@ timeout = 3
 kernel_args = [
   "debug=0xc",
   "serial=3",
-  # All eight cores reached bsd_init in the cpu-match-fixed image. Reducing
-  # cpus to 6 did not remove the SpringBoardUI assertion in our earlier test.
   "cpus=8",
   "keepsyms=1",
-  # XNU prints every STARTUP() function it runs:
-  #   kernel_startup_initialize_upto[subsystem, rank]: addr(arg)
-  # plus "kernel_bootstrap: <name>" for each named step in kernel_bootstrap().
-  # This is how a silent stop gets pinned to a function.
-  "startup_debug=1",
-  "-enable_kprintf_spam",
   "-noprogress",
   "rd=ufsroot0",
   "unentitled_ios_sim_launch=1",
@@ -102,21 +94,30 @@ kernel_args = [
   "rootrw=1",
   "launchd_unsecure_cache=1",
   "wdt=-1",
-  # USB: 0 off, 1 report controller state only, 2 device mode + CDC-ECM
-  # network. 2 gives the live console: the kernel streams it as UDP to
-  # 192.168.7.1:5140 while the phone is 192.168.7.2 on ue0. Host side:
-  #   tools/sweet-usbnet.sh boot.log     (needs sudo for the address)
+  # USB live console: kernel streams UDP to 192.168.7.1:5140 (phone 192.168.7.2).
   "sweetusb=2",
-  # Input is deliberately disabled while validating the userspace root.
-  # Enable one driver at a time after SpringBoard starts successfully.
-  "sweettouch=0",
-  "sweetkeys=0",
-  # Debug build: keep drawing kernel text over the GUI so the screen shows
-  # where it stops. Set to 1 for a clean GUI (the console still reaches the
-  # persistent log and the USB live log).
-  "sweetfb_noconsole=0",
+  # Touch-enabled config, matching the verified boot-cepheus-touch-power image
+  # (docs/touch-bringup.md, run 41289150375):
+  # ST-FTS over open-drain GPIO I2C + ldoc1 XOB enable-only power vote,
+  # driver init delayed 60 s after kernel start. All four are required;
+  # without sweettouchpower=1 the chip ID read times out (err60).
+  "sweettouch=1",
+  "sweettouchdelay=60",
+  "sweettouchgpio=1",
+  "sweettouchpower=1",
+  # PON-only power key (sleep/wake); volume-up Home is not adapted yet.
+  "sweetkeys=1",
+  "sweetkeyspononly=1",
+  # One-shot synthetic Home press at ~90 s to unlock into the home screen
+  # (the verified bring-up used this to get past the lock screen).
+  "sweethidonce=1",
+  "sweethidtest=90",
+  # Clean GUI: no kernel text drawn over SpringBoard. Set to 0 for a debug
+  # console overlay (the USB live log works either way).
+  "sweetfb_noconsole=1",
   "sweetfb_hz=30",
-  "sweetgpu=3",
+  # Fixed-timer present path from the performance patch (verified image).
+  "sweetfb_fixedtimer=1",
   "sweetlogdump=1",
 ]
 
